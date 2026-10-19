@@ -176,7 +176,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         ) {
                             Button(
                                 onClick = { viewModel.executeTrade("BUY") },
-                                colors = ButtonDefaults.buttonColors(containerColor, containerColor = ProfitGreen),
+                                colors = ButtonDefaults.buttonColors(containerColor = ProfitGreen),
                                 modifier = Modifier.weight(1.0)
                             ) {
                                 Text("شراء (BUY)", color = Color.White, fontWeight = FontWeight.Bold)
