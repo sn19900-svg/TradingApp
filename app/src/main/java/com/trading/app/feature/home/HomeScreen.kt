@@ -78,7 +78,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم إعدادات API والمحفظة الاحترافية
+            // لوحة ربط API والمحفظة الاحترافية
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -115,7 +115,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                 Text("اتصال وعرض تفاصيل المحفظة", color = BinanceDark, fontWeight = FontWeight.Bold)
                             }
                         } else {
-                            // لوحة المحفظة الاحترافية المنظمة بدقة
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(text = "حالة الاتصال: متصل بـ Binance Spot 🟢", color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 TextButton(onClick = { isConnected = false }) {
@@ -132,7 +131,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // شريط البحث المباشر عن العملات وإضافتها للمفضلة
+            // شريط البحث السريع والمفضلة
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -154,7 +153,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                 Card(
                                     colors = CardDefaults.cardColors(containerColor = if (isFav) BinanceYellow else Color.DarkGray),
                                     modifier = Modifier.clickable {
-                                        if (isFav) favorites = favorites - coin.symbol else favorites = favorites + coin.symbol
+                                        favorites = if (isFav) favorites - coin.symbol else favorites + coin.symbol
                                     }.width(120.dp)
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
@@ -169,14 +168,14 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // التنبيهات والفرص للعملات في المفضلة
+            // تنبيهات الفرص للعملات المفضلة
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "🚨 تنبيهات وفرص العملات المفضلة", color = BinanceYellow, fontWeight.Bold)
+                        Text(text = "🚨 تنبيهات وفرص العملات المفضلة", color = BinanceYellow, FontWeight.Bold)
                         Spacer(modifier = Modifier.height(6.dp))
                         favorites.forEach { fav ->
                             val c = coins.find { it.symbol == fav }
@@ -203,7 +202,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // مخطط الشموع اليابانية الاحترافي
+            // شارت الشموع الفني
             if (candles.isNotEmpty()) {
                 item {
                     Card(
@@ -227,7 +226,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     val x2 = (i + 1) * widthStep
                                     val y2 = size.height - (((closes[i + 1] - minPrice) / priceRange) * size.height).toFloat()
 
-                                    // رسم الشمعة كخطوط بارزة تشبه الشارت الحقيقي
                                     drawLine(
                                         color = if (closes[i + 1] >= closes[i]) ProfitGreen else LossRed,
                                         start = Offset(x1, y1),
