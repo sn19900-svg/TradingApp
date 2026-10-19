@@ -31,8 +31,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val indicators by viewModel.indicators.collectAsState()
     val walletBalance by viewModel.walletBalance.collectAsState()
     val tradePercentage by viewModel.tradePercentage.collectAsState()
-    val stopLossPercent by viewModel.stopLossPercent.collectAsState()
-    val takeProfitPercent by viewModel.takeProfitPercent.collectAsState()
     val activeTrades by viewModel.activeTrades.collectAsState()
     val tradeResult by viewModel.tradeResult.collectAsState()
 
@@ -91,16 +89,14 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                 value = apiKey,
                                 onValueChange = { apiKey = it },
                                 label = { Text("Binance API Key", color = Color.White) },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             OutlinedTextField(
                                 value = secretKey,
                                 onValueChange = { secretKey = it },
                                 label = { Text("Binance Secret Key", color = Color.White) },
                                 visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                                modifier = Modifier.fillMaxWidth()
                             )
                             Button(
                                 onClick = {
@@ -116,16 +112,13 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             }
                         } else {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(text = "حالة الاتصال: متصل بـ Binance Spot 🟢", color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(text = "حالة الاتصال: متصل بـ Binance 🟢", color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 TextButton(onClick = { isConnected = false }) {
                                     Text(text = "تغيير المفاتيح", color = BinanceYellow, fontSize = 11.sp)
                                 }
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "إجمالي المحفظة: 2,850.40 USDT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Divider(color = Color.DarkGray, thickness = 1.dp)
-                            Text(text = "• رصيد USDT المتاح: 1,850.20 USDT", color = Color.LightGray, fontSize = 13.sp)
-                            Text(text = "• رصيد BTC المحتفظ به: 0.012 BTC (\$1,000.20)", color = Color.LightGray, fontSize = 13.sp)
+                            Text(text = walletBalance, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }
@@ -143,8 +136,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = { Text("ابحث عن العملة (مثال: ADAUSDT)", color = Color.White) },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            modifier = Modifier.fillMaxWidth()
                         )
                         val filteredCoins = coins.filter { it.symbol.contains(searchQuery.uppercase()) }
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -163,24 +155,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-            }
-
-            // تنبيهات الفرص للعملات المفضلة
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "🚨 تنبيهات وفرص العملات المفضلة", color = BinanceYellow, FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        favorites.forEach { fav ->
-                            val c = coins.find { it.symbol == fav }
-                            val signalText = if ((c?.priceChangePercent ?: 0.0) >= 0) "🟢 فرصة شراء (RSI منخفض)" else "🔴 تحذير بيع (مقاومة قوية)"
-                            Text(text = "• $fav: $signalText", color = Color.White, fontSize = 12.sp)
                         }
                     }
                 }
