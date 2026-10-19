@@ -22,24 +22,24 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
 
     - name: Grant execute permission for gradlew
       run: |
-        cd TradingApp || true
         if [ -f "gradlew" ]; then
           chmod +x gradlew
         else
-          gradle wrapper
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
         fi
 
     - name: Build Debug APK
       run: |
-        cd TradingApp
-        gradle :app:assembleDebug --no-daemon --stacktrace
+        ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        path: TradingApp/app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
