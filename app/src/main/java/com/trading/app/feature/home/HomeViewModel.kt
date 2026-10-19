@@ -26,7 +26,7 @@ class HomeViewModel @Inject constructor(
     private val _indicators = MutableStateFlow<IndicatorResult?>(null)
     val indicators: StateFlow<IndicatorResult?> = _indicators.asStateFlow()
 
-    private val _tradePercentage = MutableStateFlow(10.0) // النسبة المئوية الافتراضية للتداول
+    private val _tradePercentage = MutableStateFlow<Double>(10.0)
     val tradePercentage: StateFlow<Double> = _tradePercentage.asStateFlow()
 
     private val _tradeResult = MutableStateFlow<String?>(null)
@@ -66,7 +66,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             repository.executeManualTrade(coin.symbol, type, _tradePercentage.value, coin.price)
                 .onSuccess { order ->
-                    _tradeResult.value = "تم تنفيذ أمر ${order.type} بنجاح لـ ${order.symbol} بنسبة ${order.percentage}% بسعر ${order.price}"
+                    _tradeResult.value = "تم تنفيذ أمر ${order.type} بنجاح لـ ${order.symbol} بنسبة ${order.percentage.toInt()}% بسعر ${order.price}"
                 }.onFailure {
                     _tradeResult.value = "فشل تنفيذ الصفقة"
                 }
