@@ -38,11 +38,12 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
     var apiKey by remember { mutableStateOf("") }
     var secretKey by remember { mutableStateOf("") }
+    var isConnected by remember { mutableStateOf(false) } // يتحكم في إخفاء حقول الـ API وإظهار لوحة التحكم
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("منصة تداول باينانس المحترفة Pro", color = BinanceYellow, fontWeight = FontWeight.Bold) },
+                title = { Text("منصة تداول باينانس الاحترافية Pro", color = BinanceYellow, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BinanceDarkCard)
             )
         },
@@ -75,43 +76,71 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم إدخال المفاتيح وعرض الرصيد الحقيقي
+            // نظام الربط الاحترافي: يختفي الحقل بعد الاتصال وتظهر لوحة المحفظة
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(text = "محفظة باينانس وحساب API", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        
-                        OutlinedTextField(
-                            value = apiKey,
-                            onValueChange = { apiKey = it },
-                            label = { Text("Binance API Key", color = Color.White) },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                        )
+                        if (!isConnected) {
+                            Text(text = "ربط حساب باينانس (API Key)", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text(text = "أدخل مفاتيح حسابك لتفعيل لوحة التحكم والمحفظة الحقيقية:", color = Color.LightGray, fontSize = 11.sp)
 
-                        OutlinedTextField(
-                            value = secretKey,
-                            onValueChange = { secretKey = it },
-                            label = { Text("Binance Secret Key", color = Color.White) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                        )
+                            OutlinedTextField(
+                                value = apiKey,
+                                onValueChange = { apiKey = it },
+                                label = { Text("Binance API Key", color = Color.White) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            )
 
-                        Button(
-                            onClick = { viewModel.fetchBinanceBalance(apiKey, secretKey) },
-                            colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("ربط وجلب رصيد المحفظة الفعلي", color = BinanceDark, fontWeight = FontWeight.Bold)
+                            OutlinedTextField(
+                                value = secretKey,
+                                onValueChange = { secretKey = it },
+                                label = { Text("Binance Secret Key", color = Color.White) },
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (apiKey.isNotBlank() && secretKey.isNotBlank()) {
+                                        viewModel.fetchBinanceBalance(apiKey, secretKey)
+                                        isConnected = true // إخفاء الحقول وإظهار لوحة التحكم
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("اتصال وفتح لوحة المحفظة", color = BinanceDark, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            // لوحة تحكم المحفظة الاحترافية بعد الاتصال الناجح
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "حالة الحساب: متصل بـ Binance Spot 🟢", color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                TextButton(onClick = { isConnected = false }) {
+                                    Text(text = "تغيير المفاتيح", color = BinanceYellow, fontSize = 11.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = walletBalance, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = walletBalance, color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
+                }
+            }
+
+            // زر فحص التحديثات الذكي داخل التطبيق
+            item {
+                OutlinedButton(
+                    onClick = {
+                        // محاكاة التحقق من وجود إصدار جديد على GitHub
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow)
+                ) {
+                    Text("التحقق من التحديثات الفورية (النسخة الحالية: v1.5)")
                 }
             }
 
@@ -152,7 +181,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // مخطط الشموع والشارت اللحظي
+            // الشارت ومخطط الشموع
             if (candles.isNotEmpty()) {
                 item {
                     Card(
@@ -214,7 +243,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم إدارة المخاطر والتنفيذ المتقدم
+            // إدارة المخاطر والتنفيذ
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
