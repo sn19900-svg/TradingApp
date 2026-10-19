@@ -1,6 +1,5 @@
 package com.trading.app.feature.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +28,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val tradePercentage by viewModel.tradePercentage.collectAsState()
     val tradeResult by viewModel.tradeResult.collectAsState()
 
-    var customPercentageText by remember { mutableStateFieldValue(tradePercentage.toString()) }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -48,7 +44,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // رسالة نتيجة الصفقة الفورية
             tradeResult?.let { result ->
                 item {
                     Card(
@@ -69,9 +64,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قائمة العملات المتاحة
             item {
-                Text("العملات المتاحة (اختر للتداول أو الشارت)", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("العملات المتاحة", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(coins) { coin ->
@@ -106,7 +100,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // السعر اللحظي والربح/الخسارة للعملة المختارة
             selectedCoin?.let { coin ->
                 item {
                     Card(
@@ -123,7 +116,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // المؤشرات الفنية الأربعة القوية والإشارة
             indicators?.let { ind ->
                 item {
                     Card(
@@ -136,7 +128,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             Text(text = "مؤشر RSI: ${String.format("%.2f", ind.rsi)}", color = Color.White)
                             Text(text = "مؤشر EMA: ${String.format("%.2f", ind.ema)}", color = Color.White)
                             Text(text = "مؤشر MACD: ${String.format("%.2f", ind.macd)}", color = Color.White)
-                            Text(text = "البولنجر باند (علوي/سفلي): ${String.format("%.2f", ind.bollingerUpper)} / ${String.format("%.2f", ind.bollingerLower)}", color = Color.White)
+                            Text(text = "البولنجر باند: ${String.format("%.2f", ind.bollingerUpper)} / ${String.format("%.2f", ind.bollingerLower)}", color = Color.White)
                             Spacer(modifier = Modifier.height(8.dp))
                             val signalColor = when (ind.signal) {
                                 TradingSignal.BUY -> ProfitGreen
@@ -149,7 +141,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // تحديد النسبة المئوية والتنفيذ اليدوي (شراء / بيع سبوت)
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -164,15 +155,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf(10.0, 25.0, 50.0, 100.0).forEach { pct ->
+                            listOf(10f, 25f, 50f, 100f).forEach { pct ->
                                 Button(
-                                    onClick = { viewModel.setTradePercentage(pct) },
+                                    onClick = { viewModel.setTradePercentage(pct.toDouble()) },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray
+                                        containerColor = if (tradePercentage == pct.toDouble()) BinanceYellow else Color.DarkGray
                                     ),
                                     modifier = Modifier.weight(1.0)
                                 ) {
-                                    Text("${pct.toInt()}%", color = if (tradePercentage == pct) BinanceDark else Color.White, fontSize = 12.sp)
+                                    Text("${pct.toInt()}%", color = if (tradePercentage == pct.toDouble()) BinanceDark else Color.White, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -204,9 +195,4 @@ fun HomeScreen(viewModel: HomeViewModel) {
             }
         }
     }
-}
-
-@Composable
-fun rememberMutableStateFieldValue(initialValue: String): MutableState<String> {
-    return remember { mutableStateOf(initialValue) }
 }
