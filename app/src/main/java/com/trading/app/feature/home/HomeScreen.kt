@@ -72,7 +72,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم إدخال مفاتيح باينانس API
+            // قسم ربط باينانس API
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -124,7 +124,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قائمة العملات المتاحة
+            // العملات المتاحة
             item {
                 Text("العملات المتاحة (تحديث فوري)", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -177,7 +177,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // مخطط الشموع والشارت اللحظي
+            // الشارت ومخطط الشموع
             if (candles.isNotEmpty()) {
                 item {
                     Card(
