@@ -3,7 +3,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+  <!-- خلفية رمزية لشارت صاعد -->
   <path
       android:fillColor="#FCD535"
-      android:pathData="M34,54L54,34L74,54L54,74Z"/>
+      android:pathData="M20,80 L35,55 L50,65 L70,30 L90,20 L90,85 Z"
+      android:fillAlpha="0.3"/>
+  <!-- خط السهم الصاعد القوي -->
+  <path
+      android:strokeColor="#0ECB81"
+      android:strokeWidth="6"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M20,75 L45,45 L65,55 L90,25"/>
+  <!-- رأس السهم -->
+  <path
+      android:fillColor="#0ECB81"
+      android:pathData="M78,25 L90,25 L90,37 Z"/>
 </vector>
