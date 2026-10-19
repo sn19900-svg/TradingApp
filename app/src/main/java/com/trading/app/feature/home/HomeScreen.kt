@@ -162,7 +162,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray
                                     ),
-                                    modifier = Modifier.weight(1.0)
+                                    modifier = Modifier.weight(1f)
                                 ) {
                                     Text("${pct.toInt()}%", color = if (tradePercentage == pct) BinanceDark else Color.White, fontSize = 12.sp)
                                 }
@@ -178,7 +178,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             Button(
                                 onClick = { viewModel.executeTrade("BUY") },
                                 colors = ButtonDefaults.buttonColors(containerColor = ProfitGreen),
-                                modifier = Modifier.weight(1.0)
+                                modifier = Modifier.weight(1f)
                             ) {
                                 Text("شراء (BUY)", color = Color.White, fontWeight = FontWeight.Bold)
                             }
@@ -186,7 +186,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             Button(
                                 onClick = { viewModel.executeTrade("SELL") },
                                 colors = ButtonDefaults.buttonColors(containerColor = LossRed),
-                                modifier = Modifier.weight(1.0)
+                                modifier = Modifier.weight(1f)
                             ) {
                                 Text("بيع (SELL)", color = Color.White, fontWeight = FontWeight.Bold)
                             }
