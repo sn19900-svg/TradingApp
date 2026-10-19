@@ -155,7 +155,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf(10.0, 25.0, 50.0, 100.0).forEach { pct ->
+                            val percentages = listOf(10.0, 25.0, 50.0, 100.0)
+                            percentages.forEach { pct ->
                                 Button(
                                     onClick = { viewModel.setTradePercentage(pct) },
                                     colors = ButtonDefaults.buttonColors(
