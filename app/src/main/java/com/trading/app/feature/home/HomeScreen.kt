@@ -29,17 +29,20 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val selectedCoin by viewModel.selectedCoin.collectAsState()
     val candles by viewModel.candles.collectAsState()
     val indicators by viewModel.indicators.collectAsState()
+    val walletBalance by viewModel.walletBalance.collectAsState()
     val tradePercentage by viewModel.tradePercentage.collectAsState()
+    val stopLossPercent by viewModel.stopLossPercent.collectAsState()
+    val takeProfitPercent by viewModel.takeProfitPercent.collectAsState()
+    val activeTrades by viewModel.activeTrades.collectAsState()
     val tradeResult by viewModel.tradeResult.collectAsState()
 
     var apiKey by remember { mutableStateOf("") }
     var secretKey by remember { mutableStateOf("") }
-    var isApiSaved by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("تداول باينانس اللحظي والآلي", color = BinanceYellow, fontWeight = FontWeight.Bold) },
+                title = { Text("منصة تداول باينانس المحترفة Pro", color = BinanceYellow, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BinanceDarkCard)
             )
         },
@@ -72,27 +75,21 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم ربط باينانس API
+            // قسم إدخال المفاتيح وعرض الرصيد الحقيقي
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(text = "ربط حساب باينانس (API Key)", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text(text = "أدخل مفاتيح حسابك لتنفيذ الصفقات الحقيقية:", color = Color.LightGray, fontSize = 11.sp)
-
+                        Text(text = "محفظة باينانس وحساب API", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        
                         OutlinedTextField(
                             value = apiKey,
                             onValueChange = { apiKey = it },
                             label = { Text("Binance API Key", color = Color.White) },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BinanceYellow,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            )
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                         )
 
                         OutlinedTextField(
@@ -101,30 +98,24 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             label = { Text("Binance Secret Key", color = Color.White) },
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BinanceYellow,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            )
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                         )
 
                         Button(
-                            onClick = { isApiSaved = true },
+                            onClick = { viewModel.fetchBinanceBalance(apiKey, secretKey) },
                             colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("حفظ المفاتيح وتفعيل الربط", color = BinanceDark, fontWeight = FontWeight.Bold)
+                            Text("ربط وجلب رصيد المحفظة الفعلي", color = BinanceDark, fontWeight = FontWeight.Bold)
                         }
 
-                        if (isApiSaved) {
-                            Text(text = "✓ تم ربط الحساب وتفعيل التنفيذ الآلي بنجاح", color = ProfitGreen, fontSize = 12.sp)
-                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = walletBalance, color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
 
-            // العملات المتاحة
+            // قائمة العملات المتاحة
             item {
                 Text("العملات المتاحة (تحديث فوري)", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -132,29 +123,13 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     items(coins) { coin ->
                         val isSelected = selectedCoin?.symbol == coin.symbol
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) BinanceYellow else BinanceDarkCard
-                            ),
-                            modifier = Modifier
-                                .clickable { viewModel.selectCoin(coin) }
-                                .width(130.dp)
+                            colors = CardDefaults.cardColors(containerColor = if (isSelected) BinanceYellow else BinanceDarkCard),
+                            modifier = Modifier.clickable { viewModel.selectCoin(coin) }.width(130.dp)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = coin.symbol,
-                                    color = if (isSelected) BinanceDark else Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "\$${coin.price}",
-                                    color = if (isSelected) BinanceDark else Color.LightGray,
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = "${if (coin.priceChangePercent >= 0) "+" else ""}${coin.priceChangePercent}%",
-                                    color = if (coin.priceChangePercent >= 0) ProfitGreen else LossRed,
-                                    fontSize = 11.sp
-                                )
+                                Text(text = coin.symbol, color = if (isSelected) BinanceDark else Color.White, fontWeight = FontWeight.Bold)
+                                Text(text = "\$${coin.price}", color = if (isSelected) BinanceDark else Color.LightGray, fontSize = 12.sp)
+                                Text(text = "${if (coin.priceChangePercent >= 0) "+" else ""}${coin.priceChangePercent}%", color = if (coin.priceChangePercent >= 0) ProfitGreen else LossRed, fontSize = 11.sp)
                             }
                         }
                     }
@@ -177,7 +152,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // الشارت ومخطط الشموع
+            // مخطط الشموع والشارت اللحظي
             if (candles.isNotEmpty()) {
                 item {
                     Card(
@@ -193,9 +168,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             val minPrice = closes.minOrNull() ?: 0.0
                             val priceRange = if (maxPrice == minPrice) 1.0 else (maxPrice - minPrice)
 
-                            Canvas(modifier = Modifier
-                                .fillMaxWidth()
-                                .height(140.dp)) {
+                            Canvas(modifier = Modifier.fillMaxWidth().height(140.dp)) {
                                 val widthStep = size.width / (closes.size.coerceAtLeast(1))
                                 for (i in 0 until closes.size - 1) {
                                     val x1 = i * widthStep
@@ -241,26 +214,22 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
+            // قسم إدارة المخاطر والتنفيذ المتقدم
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "تنفيذ الصفقات اليدوية السبوت", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                        Text(text = "إدارة المخاطر وتنفيذ الصفقات الاحترافية", color = BinanceYellow, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "النسبة المئوية المحددة من الرصيد: ${tradePercentage.toInt()}%", color = Color.White)
+                        Text(text = "حجم رأس المال المستخدم: ${tradePercentage.toInt()}%", color = Color.White, fontSize = 12.sp)
                         
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(10.0, 25.0, 50.0, 100.0).forEach { pct ->
                                 Button(
                                     onClick = { viewModel.setTradePercentage(pct) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray
-                                    ),
+                                    colors = ButtonDefaults.buttonColors(containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Text("${pct.toInt()}%", color = if (tradePercentage == pct) BinanceDark else Color.White, fontSize = 12.sp)
@@ -268,26 +237,43 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(text = "وقف الخسارة (SL): ${stopLossPercent}% | جني الأرباح (TP): ${takeProfitPercent}%", color = Color.LightGray, fontSize = 11.sp)
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Button(
-                                onClick = { viewModel.executeTrade("BUY") },
+                                onClick = { viewModel.executeAdvancedTrade("BUY") },
                                 colors = ButtonDefaults.buttonColors(containerColor = ProfitGreen),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("شراء (BUY)", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("شراء آمن (BUY)", color = Color.White, fontWeight = FontWeight.Bold)
                             }
 
                             Button(
-                                onClick = { viewModel.executeTrade("SELL") },
+                                onClick = { viewModel.executeAdvancedTrade("SELL") },
                                 colors = ButtonDefaults.buttonColors(containerColor = LossRed),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("بيع (SELL)", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("بيع آمن (SELL)", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // سجل الصفقات النشطة
+            if (activeTrades.isNotEmpty()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = "سجل الصفقات النشطة والمحمية", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            activeTrades.forEach { trade ->
+                                Text(text = "• [${trade.type}] ${trade.symbol} - سعر الدخول: \$${trade.price} (SL: ${String.format("%.2f", trade.stopLoss)})", color = Color.White, fontSize = 12.sp)
                             }
                         }
                     }
