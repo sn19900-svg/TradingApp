@@ -32,7 +32,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val tradePercentage by viewModel.tradePercentage.collectAsState()
     val tradeResult by viewModel.tradeResult.collectAsState()
 
-    // متغيرات ربط الـ API
     var apiKey by remember { mutableStateOf("") }
     var secretKey by remember { mutableStateOf("") }
     var isApiSaved by remember { mutableStateOf(false) }
@@ -53,7 +52,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // نتيجة الصفقة
             tradeResult?.let { result ->
                 item {
                     Card(
@@ -74,7 +72,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قسم ربط حساب باينانس عبر API
+            // قسم إدخال مفاتيح باينانس API
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -126,7 +124,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // قائمة العملات المتاحة والتحديث الفوري
+            // قائمة العملات المتاحة
             item {
                 Text("العملات المتاحة (تحديث فوري)", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -163,7 +161,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // تفاصيل العملة المختارة
             selectedCoin?.let { coin ->
                 item {
                     Card(
@@ -180,7 +177,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // مخطط الشموع البياني
+            // مخطط الشموع والشارت اللحظي
             if (candles.isNotEmpty()) {
                 item {
                     Card(
@@ -202,9 +199,9 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                 val widthStep = size.width / (closes.size.coerceAtLeast(1))
                                 for (i in 0 until closes.size - 1) {
                                     val x1 = i * widthStep
-                                    val y1 = size.height - ((closes[i] - minPrice) / priceRange * size.height).toFloat()
+                                    val y1 = size.height - (((closes[i] - minPrice) / priceRange) * size.height).toFloat()
                                     val x2 = (i + 1) * widthStep
-                                    val y2 = size.height - ((closes[i + 1] - minPrice) / priceRange * size.height).toFloat()
+                                    val y2 = size.height - (((closes[i + 1] - minPrice) / priceRange) * size.height).toFloat()
 
                                     drawLine(
                                         color = if (closes[i + 1] >= closes[i]) ProfitGreen else LossRed,
@@ -219,7 +216,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // المؤشرات الفنية الأربعة
             indicators?.let { ind ->
                 item {
                     Card(
@@ -245,7 +241,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // تنفيذ الصفقات اليدوية والآلية
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = BinanceDarkCard),
@@ -289,7 +284,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
                             Button(
                                 onClick = { viewModel.executeTrade("SELL") },
-                                colors = ButtonDefaults.buttonColors(containerColor, containerColor = LossRed),
+                                colors = ButtonDefaults.buttonColors(containerColor = LossRed),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("بيع (SELL)", color = Color.White, fontWeight = FontWeight.Bold)
