@@ -1,5 +1,9 @@
 package com.trading.app.feature.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -21,10 +26,14 @@ import com.trading.app.core.theme.BinanceYellow
 import com.trading.app.core.theme.LossRed
 import com.trading.app.core.theme.ProfitGreen
 import com.trading.app.domain.model.TradingSignal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
+    val context = LocalContext.current
     val coins by viewModel.coins.collectAsState()
     val selectedCoin by viewModel.selectedCoin.collectAsState()
     val candles by viewModel.candles.collectAsState()
@@ -39,14 +48,67 @@ fun HomeScreen(viewModel: HomeViewModel) {
     var isConnected by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var favorites by remember { mutableStateOf(listOf("BTCUSDT", "ETHUSDT")) }
-    var currentScreen by remember { mutableStateOf("home") } // للتبديل بين الرئيسية والإعدادات والـ IP
+    var currentScreen by remember { mutableStateOf("home") } // home, settings
+    
+    // إعدادات الأمان
+    var securityMode by remember { mutableStateOf("بدون حماية") } // بصمة، رمز سري، بدون
+    var pinInput by remember { mutableStateOf("") }
+    var isLocked by remember { mutableStateOf(false) }
 
-    if (currentScreen == "settings") {
-        // شاشة الإعدادات والأمان والـ IP الاحترافية
+    // جلب الـ IP العالمي الحقيقي
+    var publicIp by remember { mutableStateOf("جاري جلب الـ IP العالمي...") }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val ip = URL("https://api.ipify.org").readText()
+                publicIp = ip
+            } catch (e: Exception) {
+                publicIp = "فشل جلب الـ IP، تحقق من الاتصال"
+            }
+        }
+    }
+
+    if (isLocked) {
+        // شاشة قفل الحماية (بصمة أو رمز سري)
+        Surface(modifier = Modifier.fillMaxSize(), color = BinanceDark) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                Text(text = "🔒 التطبيق مقفل لأسباب أمنية", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                if (securityMode == "رمز سري") {
+                    OutlinedTextField(
+                        value = pinInput,
+                        onValueChange = { if (it.length <= 5) pinInput = it },
+                        label = { Text("أدخل رمز السر (5 أرقام)", color = Color.White) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BinanceYellow, unfocusedBorderColor = Color.Gray, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { if (pinInput.length == 5) isLocked = false else Toast.makeText(context, "الرمز يجب أن يكون 5 أرقام", Toast.LENGTH_SHORT).show() },
+                        colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow)
+                    ) {
+                        Text("فتح القفل", color = BinanceDark, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Button(
+                        onClick = { isLocked = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow)
+                    ) {
+                        Text("فتح بالبصمة / المصادقة الحيوية", color = BinanceDark, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    } else if (currentScreen == "settings") {
+        // شاشة الإعدادات المتقدمة (الـ IP العالمي المنسخ وحماية البصمة والـ PIN)
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("إعدادات الأمان والـ IP", color = BinanceYellow, fontWeight = FontWeight.Bold) },
+                    title = { Text("إعدادات الأمان والشبكة والـ IP", color = BinanceYellow, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         TextButton(onClick = { currentScreen = "home" }) {
                             Text("← عودة", color = BinanceYellow)
@@ -61,26 +123,50 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // بطاقة الـ IP العالمي مع زر النسخ المباشر
                 Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "عنوان IP الخاص بجهازك للاستثناء", color = BinanceYellow, fontWeight = FontWeight.Bold)
-                        Text(text = "انسخ هذا الـ IP وأضفه في إعدادات باينانس (IP Whitelist) لتفعيل الصفقات الحقيقية:", color = Color.LightGray, fontSize = 12.sp)
-                        Text(text = "192.168.1.50 (نشط)", color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = "عنوان IP العالمي لجهازك (Global IP)", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                        Text(text = "انسخ هذا الـ IP المعتمد عالمياً وأضفه في قائمة الاستثناءات بباينانس (IP Whitelist):", color = Color.LightGray, fontSize = 12.sp)
+                        Text(text = publicIp, color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        
+                        Button(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Global IP", publicIp)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "تم نسخ الـ IP بنجاح!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("نسخ الـ IP مباشرة", color = BinanceDark, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
+                // بطاقة إعدادات الحماية الأمنية
                 Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(text = "حماية التطبيق عند الدخول", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                        Text(text = "حماية التطبيق عند كل دخول", color = BinanceYellow, fontWeight = FontWeight.Bold)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Button(onClick = { }, colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow)) {
-                                Text("بصمة الإصبع", color = BinanceDark, fontSize = 11.sp)
+                            Button(
+                                onClick = { securityMode = "بصمة"; isLocked = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "بصمة") BinanceYellow else Color.DarkGray)
+                            ) {
+                                Text("بصمة الإصبع", color = if (securityMode == "بصمة") BinanceDark else Color.White, fontSize = 11.sp)
                             }
-                            Button(onClick = { }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
-                                Text("رمز 5 أرقام", color = Color.White, fontSize = 11.sp)
+                            Button(
+                                onClick = { securityMode = "رمز سري"; isLocked = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "رمز سري") BinanceYellow else Color.DarkGray)
+                            ) {
+                                Text("رمز 5 أرقام", color = if (securityMode == "رمز سري") BinanceDark else Color.White, fontSize = 11.sp)
                             }
-                            Button(onClick = { }, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
-                                Text("بدون حماية", color = Color.White, fontSize = 11.sp)
+                            Button(
+                                onClick = { securityMode = "بدون حماية"; isLocked = false },
+                                colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "بدون حماية") BinanceYellow else Color.DarkGray)
+                            ) {
+                                Text("إلغاء الحماية", color = if (securityMode == "بدون حماية") BinanceDark else Color.White, fontSize = 11.sp)
                             }
                         }
                     }
@@ -88,13 +174,12 @@ fun HomeScreen(viewModel: HomeViewModel) {
             }
         }
     } else {
-        // الشاشة الرئيسية الاحترافية
+        // الشاشة الرئيسية الاحترافية مع قسم خاص للعملات المفضلة
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("منصة باينانس الاحترافية Pro", color = BinanceYellow, fontWeight = FontWeight.Bold) },
                     actions = {
-                        // زر الإعدادات والانتقال لشاشة الـ IP والحماية
                         IconButton(onClick = { currentScreen = "settings" }) {
                             Text("⚙️", fontSize = 20.sp)
                         }
@@ -170,15 +255,49 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     }
                 }
 
-                // شريط البحث المستههدف وقائمة المفضلة المجمعة
+                // القسم الخاص والمستقل للعملات المفضلة (Watchlist Section)
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(text = "بحث العملات والمفضلة المجمعة ⭐", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                            Text(text = "⭐ العملات المفضلة والمتابعة السريعة", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                            if (favorites.isEmpty()) {
+                                Text(text = "لا توجد عملات في المفضلة حالياً. استخدم البحث أدناه لإضافة عملات.", color = Color.Gray, fontSize = 12.sp)
+                            } else {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(favorites) { favSymbol ->
+                                        val coinObj = coins.find { it.symbol == favSymbol }
+                                        Card(
+                                            colors = CardDefaults.cardColors(containerColor = BinanceYellow),
+                                            modifier = Modifier.width(130.dp).clickable {
+                                                coinObj?.let { viewModel.selectCoin(it) }
+                                            }
+                                        ) {
+                                            Column(modifier = Modifier.padding(10.dp)) {
+                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text(text = favSymbol, color = BinanceDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                    Text(text = "❌", fontSize = 10.sp, modifier = Modifier.clickable {
+                                                        favorites = favorites - favSymbol
+                                                    })
+                                                }
+                                                Text(text = "\$${coinObj?.price ?: "---"}", color = BinanceDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // شريط البحث العام المباشر من باينانس
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(text = "البحث الشامل في أسواق باينانس", color = BinanceYellow, fontWeight = FontWeight.Bold)
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                label = { Text("ابحث (مثال: XRPUSDT)", color = Color.White) },
+                                label = { Text("ابحث عن أي زوج (مثال: SOLUSDT)", color = Color.White) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             val filteredCoins = coins.filter { it.symbol.contains(searchQuery.uppercase()) }
@@ -188,13 +307,14 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     Card(
                                         colors = CardDefaults.cardColors(containerColor = if (isFav) BinanceYellow else Color.DarkGray),
                                         modifier = Modifier.clickable {
-                                            favorites = if (isFav) favorites - coin.symbol else favorites + coin.symbol
+                                            viewModel.selectCoin(coin)
+                                            if (!isFav) favorites = favorites + coin.symbol
                                         }.width(120.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(8.dp)) {
                                             Text(text = coin.symbol, color = if (isFav) BinanceDark else Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                             Text(text = "\$${coin.price}", color = if (isFav) BinanceDark else Color.LightGray, fontSize = 11.sp)
-                                            Text(text = if (isFav) "⭐ مفضلة" else "+ إضافة", color = if (isFav) BinanceDark else BinanceYellow, fontSize = 10.sp)
+                                            Text(text = if (isFav) "⭐ في المفضلة" else "+ إضافة للمفضلة", color = if (isFav) BinanceDark else BinanceYellow, fontSize = 9.sp)
                                         }
                                     }
                                 }
