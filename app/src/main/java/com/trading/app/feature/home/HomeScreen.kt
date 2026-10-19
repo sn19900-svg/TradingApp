@@ -149,7 +149,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(text = "تنفيذ الصفقات اليدوية السبوت", color = BinanceYellow, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "النسبة المئوية المحددة من الرصيد: ${tradePercentage}%", color = Color.White)
+                        Text(text = "النسبة المئوية المحددة من الرصيد: ${tradePercentage.toInt()}%", color = Color.White)
                         
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -176,7 +176,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         ) {
                             Button(
                                 onClick = { viewModel.executeTrade("BUY") },
-                                colors = ButtonDefaults.buttonColors(containerColor = ProfitGreen),
+                                colors = ButtonDefaults.buttonColors(containerColor, containerColor = ProfitGreen),
                                 modifier = Modifier.weight(1.0)
                             ) {
                                 Text("شراء (BUY)", color = Color.White, fontWeight = FontWeight.Bold)
