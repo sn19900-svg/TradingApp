@@ -155,15 +155,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf(10f, 25f, 50f, 100f).forEach { pct ->
+                            listOf(10.0, 25.0, 50.0, 100.0).forEach { pct ->
                                 Button(
-                                    onClick = { viewModel.setTradePercentage(pct.toDouble()) },
+                                    onClick = { viewModel.setTradePercentage(pct) },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (tradePercentage == pct.toDouble()) BinanceYellow else Color.DarkGray
+                                        containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray
                                     ),
                                     modifier = Modifier.weight(1.0)
                                 ) {
-                                    Text("${pct.toInt()}%", color = if (tradePercentage == pct.toDouble()) BinanceDark else Color.White, fontSize = 12.sp)
+                                    Text("${pct.toInt()}%", color = if (tradePercentage == pct) BinanceDark else Color.White, fontSize = 12.sp)
                                 }
                             }
                         }
