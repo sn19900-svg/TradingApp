@@ -15,15 +15,14 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class TradeRecord(
+data class ExecutedTrade(
     val id: String,
     val symbol: String,
-    val type: String,
-    val price: Double,
+    val type: String, // BUY أو SELL
+    val entryPrice: Double,
     val amount: Double,
-    val stopLoss: Double,
-    val takeProfit: Double,
-    val status: String
+    val percentage: Double,
+    val timestamp: String
 )
 
 @HiltViewModel
@@ -43,20 +42,14 @@ class HomeViewModel @Inject constructor(
     private val _indicators = MutableStateFlow<IndicatorResult?>(null)
     val indicators: StateFlow<IndicatorResult?> = _indicators.asStateFlow()
 
-    private val _walletBalance = MutableStateFlow<String>("غير متصل")
+    private val _walletBalance = MutableStateFlow<String>("جاري مزامنة الرصيد...")
     val walletBalance: StateFlow<String> = _walletBalance.asStateFlow()
 
     private val _tradePercentage = MutableStateFlow<Double>(10.0)
     val tradePercentage: StateFlow<Double> = _tradePercentage.asStateFlow()
 
-    private val _stopLossPercent = MutableStateFlow<Double>(2.0)
-    val stopLossPercent: StateFlow<Double> = _stopLossPercent.asStateFlow()
-
-    private val _takeProfitPercent = MutableStateFlow<Double>(5.0)
-    val takeProfitPercent: StateFlow<Double> = _takeProfitPercent.asStateFlow()
-
-    private val _activeTrades = MutableStateFlow<List<TradeRecord>>(emptyList())
-    val activeTrades: StateFlow<List<TradeRecord>> = _activeTrades.asStateFlow()
+    private val _executedTrades = MutableStateFlow<List<ExecutedTrade>>(emptyList())
+    val executedTrades: StateFlow<List<ExecutedTrade>> = _executedTrades.asStateFlow()
 
     private val _tradeResult = MutableStateFlow<String?>(null)
     val tradeResult: StateFlow<String?> = _tradeResult.asStateFlow()
@@ -120,37 +113,24 @@ class HomeViewModel @Inject constructor(
         _tradePercentage.value = percent
     }
 
-    fun setStopLoss(sl: Double) {
-        _stopLossPercent.value = sl
-    }
-
-    fun setTakeProfit(tp: Double) {
-        _takeProfitPercent.value = tp
-    }
-
     fun executeAdvancedTrade(type: String) {
         val coin = _selectedCoin.value ?: return
-        val currentPrice = coin.price
-        val slPrice = if (type == "BUY") currentPrice * (1 - _stopLossPercent.value / 100) else currentPrice * (1 + _stopLossPercent.value / 100)
-        val tpPrice = if (type == "BUY") currentPrice * (1 + _takeProfitPercent.value / 100) else currentPrice * (1 - _takeProfitPercent.value / 100)
-
         viewModelScope.launch {
-            repository.executeManualTrade(coin.symbol, type, _tradePercentage.value, currentPrice)
+            repository.executeManualTrade(coin.symbol, type, _tradePercentage.value, coin.price)
                 .onSuccess { order ->
-                    val newTrade = TradeRecord(
-                        id = System.currentTimeMillis().toString().takeLast(4),
+                    val newTrade = ExecutedTrade(
+                        id = System.currentTimeMillis().toString().takeLast(5),
                         symbol = coin.symbol,
                         type = type,
-                        price = currentPrice,
-                        amount = order.percentage,
-                        stopLoss = slPrice,
-                        takeProfit = tpPrice,
-                        status = "نشطة (محمية)"
+                        entryPrice = coin.price,
+                        amount = (_tradePercentage.value / 100.0) * 1000.0, // كمية تقريبية بناءً على رأس المال
+                        percentage = _tradePercentage.value,
+                        timestamp = android.text.format.DateFormat.format("HH:mm:ss", java.util.Date()).toString()
                     )
-                    _activeTrades.value = _activeTrades.value + newTrade
-                    _tradeResult.value = "تم تنفيذ صفقة ${order.type} مع وقف خسارة عند ${String.format("%.2f", slPrice)} وجني أرباح عند ${String.format("%.2f", tpPrice)}"
+                    _executedTrades.value = listOf(newTrade) + _executedTrades.value
+                    _tradeResult.value = "تم تنفيذ صفقة ${order.type} بنجاح لـ ${order.symbol} بسعر ${coin.price}"
                 }.onFailure {
-                    _tradeResult.value = "فشل تنفيذ الصفقة الآلية"
+                    _tradeResult.value = "فشل تنفيذ الصفقة"
                 }
         }
     }
