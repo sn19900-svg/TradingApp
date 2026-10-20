@@ -11,7 +11,9 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.URL
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class TradingRepositoryImpl @Inject constructor() : TradingRepository {
 
     override suspend fun getTopCoins(): Result<List<Coin>> = withContext(Dispatchers.IO) {
@@ -71,7 +73,7 @@ class TradingRepositoryImpl @Inject constructor() : TradingRepository {
         }
         val closes = candles.map { it.close }
         val currentPrice = closes.last()
-        val rsi = 48.5 // حساب تقديري مبسط لمعيار RSI (14)
+        val rsi = 48.5
         val ema = currentPrice * 0.995
         val macd = 1.25
         val upper = currentPrice * 1.02
