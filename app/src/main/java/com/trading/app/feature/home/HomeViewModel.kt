@@ -18,7 +18,7 @@ import javax.inject.Inject
 data class ExecutedTrade(
     val id: String,
     val symbol: String,
-    val type: String, // BUY أو SELL
+    val type: String,
     val entryPrice: Double,
     val amount: Double,
     val percentage: Double,
@@ -42,8 +42,15 @@ class HomeViewModel @Inject constructor(
     private val _indicators = MutableStateFlow<IndicatorResult?>(null)
     val indicators: StateFlow<IndicatorResult?> = _indicators.asStateFlow()
 
-    private val _walletBalance = MutableStateFlow<String>("جاري مزامنة الرصيد...")
-    val walletBalance: StateFlow<String> = _walletBalance.asStateFlow()
+    // الحساب: حقيقي أو تجريبي (Demo بـ 100$)
+    private val _isDemoAccount = MutableStateFlow(true)
+    val isDemoAccount: StateFlow<Boolean> = _isDemoAccount.asStateFlow()
+
+    private val _demoBalance = MutableStateFlow(100.0)
+    val demoBalance: StateFlow<Double> = _demoBalance.asStateFlow()
+
+    private val _realBalance = MutableStateFlow(2850.40)
+    val realBalance: StateFlow<Double> = _realBalance.asStateFlow()
 
     private val _tradePercentage = MutableStateFlow<Double>(10.0)
     val tradePercentage: StateFlow<Double> = _tradePercentage.asStateFlow()
@@ -59,6 +66,10 @@ class HomeViewModel @Inject constructor(
         startLivePriceUpdates()
     }
 
+    fun toggleAccountType(isDemo: Boolean) {
+        _isDemoAccount.value = isDemo
+    }
+
     fun loadCoins() {
         viewModelScope.launch {
             repository.getTopCoins().onSuccess { list ->
@@ -66,17 +77,6 @@ class HomeViewModel @Inject constructor(
                 if (list.isNotEmpty() && _selectedCoin.value == null) {
                     selectCoin(list[0])
                 }
-            }
-        }
-    }
-
-    fun fetchBinanceBalance(apiKey: String, secretKey: String) {
-        viewModelScope.launch {
-            delay(800)
-            if (apiKey.isNotBlank() && secretKey.isNotBlank()) {
-                _walletBalance.value = "الرصيد المتاح: 2,850.40 USDT | 0.035 BTC"
-            } else {
-                _walletBalance.value = "مفاتيح الـ API غير صحيحة"
             }
         }
     }
@@ -115,24 +115,47 @@ class HomeViewModel @Inject constructor(
 
     fun executeAdvancedTrade(type: String) {
         val coin = _selectedCoin.value ?: return
-        viewModelScope.launch {
-            repository.executeManualTrade(coin.symbol, type, _tradePercentage.value, coin.price)
-                .onSuccess { order ->
-                    val newTrade = ExecutedTrade(
-                        id = System.currentTimeMillis().toString().takeLast(5),
-                        symbol = coin.symbol,
-                        type = type,
-                        entryPrice = coin.price,
-                        amount = (_tradePercentage.value / 100.0) * 1000.0, // كمية تقريبية بناءً على رأس المال
-                        percentage = _tradePercentage.value,
-                        timestamp = android.text.format.DateFormat.format("HH:mm:ss", java.util.Date()).toString()
-                    )
-                    _executedTrades.value = listOf(newTrade) + _executedTrades.value
-                    _tradeResult.value = "تم تنفيذ صفقة ${order.type} بنجاح لـ ${order.symbol} بسعر ${coin.price}"
-                }.onFailure {
-                    _tradeResult.value = "فشل تنفيذ الصفقة"
-                }
+        val currentBalance = if (_isDemoAccount.value) _demoBalance.value else _realBalance.value
+        val investedAmount = currentBalance * (_tradePercentage.value / 100.0)
+
+        if (_isDemoAccount.value) {
+            if (_demoBalance.value < investedAmount) return
+            _demoBalance.value -= investedAmount
+        } else {
+            if (_realBalance.value < investedAmount) return
+            _realBalance.value -= investedAmount
         }
+
+        val newTrade = ExecutedTrade(
+            id = System.currentTimeMillis().toString().takeLast(5),
+            symbol = coin.symbol,
+            type = type,
+            entryPrice = coin.price,
+            amount = investedAmount,
+            percentage = _tradePercentage.value,
+            timestamp = android.text.format.DateFormat.format("HH:mm:ss", java.util.Date()).toString()
+        )
+        _executedTrades.value = listOf(newTrade) + _executedTrades.value
+        // تم إزالة الرسائل العلية الفورية لكي تختفي ولا تظهر في الأعلى
+        _tradeResult.value = null
+    }
+
+    fun closeTrade(tradeId: String) {
+        val trade = _executedTrades.value.find { it.id == tradeId } ?: return
+        val currentCoin = _coins.value.find { it.symbol == trade.symbol }
+        val exitPrice = currentCoin?.price ?: trade.entryPrice
+        val priceDiff = if (trade.type == "BUY") exitPrice - trade.entryPrice else trade.entryPrice - exitPrice
+        val pnlPercent = (priceDiff / trade.entryPrice) * 100
+        val pnlAmount = (pnlPercent / 100) * trade.amount
+        val returnAmount = trade.amount + pnlAmount
+
+        if (_isDemoAccount.value) {
+            _demoBalance.value += returnAmount
+        } else {
+            _realBalance.value += returnAmount
+        }
+
+        _executedTrades.value = _executedTrades.value.filter { it.id != tradeId }
     }
 
     fun clearTradeResult() {

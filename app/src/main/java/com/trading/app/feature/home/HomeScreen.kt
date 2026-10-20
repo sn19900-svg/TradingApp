@@ -37,18 +37,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val selectedCoin by viewModel.selectedCoin.collectAsState()
     val candles by viewModel.candles.collectAsState()
     val indicators by viewModel.indicators.collectAsState()
-    val walletBalance by viewModel.walletBalance.collectAsState()
+    val isDemoAccount by viewModel.isDemoAccount.collectAsState()
+    val demoBalance by viewModel.demoBalance.collectAsState()
+    val realBalance by viewModel.realBalance.collectAsState()
     val tradePercentage by viewModel.tradePercentage.collectAsState()
     val executedTrades by viewModel.executedTrades.collectAsState()
-    val tradeResult by viewModel.tradeResult.collectAsState()
 
-    var apiKey by remember { mutableStateOf("") }
-    var secretKey by remember { mutableStateOf("") }
-    var isConnected by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var favorites by remember { mutableStateOf(listOf("BTCUSDT", "ETHUSDT")) }
     
-    // التبويبات السفلية: الرئيسية، الأسواق، صفقاتي (المنفذة)، تداول، الأصول
     var selectedBottomTab by remember { mutableStateOf("الأسواق") }
     var marketTab by remember { mutableStateOf("التداول الفوري") }
     var currentScreen by remember { mutableStateOf("main") }
@@ -123,7 +120,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(text = "عنوان IP العالمي لجهازك (Global IP)", color = BinanceYellow, fontWeight = FontWeight.Bold)
-                            Text(text = "قم بنسخ هذا الـ IP وإضافته في قائمة الاستثناءات (IP Whitelist) في إعدادات باينانس:", color = Color.LightGray, fontSize = 12.sp)
+                            Text(text = "قم بنسخ هذا الـ IP وإضافته في قائمة الاستثناءات (IP Whitelist) في باينانس[span_3](start_span)[span_3](end_span):", color = Color.LightGray, fontSize = 12.sp)
                             Text(text = publicIp, color = ProfitGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Button(
                                 onClick = {
@@ -135,24 +132,6 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("نسخ الـ IP مباشرة", color = BinanceDark, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-                item {
-                    Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(text = "إعدادات الأمان وقفل التطبيق", color = BinanceYellow, fontWeight = FontWeight.Bold)
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Button(onClick = { securityMode = "بصمة"; isLocked = true }, colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "بصمة") BinanceYellow else Color.DarkGray)) {
-                                    Text("بصمة", color = if (securityMode == "بصمة") BinanceDark else Color.White, fontSize = 11.sp)
-                                }
-                                Button(onClick = { securityMode = "رمز سري"; isLocked = true }, colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "رمز سري") BinanceYellow else Color.DarkGray)) {
-                                    Text("رمز 5 أرقام", color = if (securityMode == "رمز سري") BinanceDark else Color.White, fontSize = 11.sp)
-                                }
-                                Button(onClick = { securityMode = "بدون حماية"; isLocked = false }, colors = ButtonDefaults.buttonColors(containerColor = if (securityMode == "بدون حماية") BinanceYellow else Color.DarkGray)) {
-                                    Text("إلغاء", color = if (securityMode == "بدون حماية") BinanceDark else Color.White, fontSize = 11.sp)
-                                }
                             }
                         }
                     }
@@ -227,15 +206,33 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                tradeResult?.let { result ->
-                    item {
-                        Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(text = result, color = BinanceYellow, fontSize = 14.sp)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = { viewModel.clearTradeResult() }, colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow)) {
-                                    Text("إغلاق", color = BinanceDark)
-                                }
+                // زر تبديل الحساب (تجريبي / حقيقي) أعلى كل شاشة
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isDemoAccount) "🧪 الحساب التجريبي (رصيد 100$)" else "💼 الحساب الحقيقي",
+                            color = BinanceYellow,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Button(
+                                onClick = { viewModel.toggleAccountType(true) },
+                                colors = ButtonDefaults.buttonColors(containerColor = if (isDemoAccount) BinanceYellow else Color.DarkGray),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                            ) {
+                                Text("تجريبي", color = if (isDemoAccount) BinanceDark else Color.White, fontSize = 11.sp)
+                            }
+                            Button(
+                                onClick = { viewModel.toggleAccountType(false) },
+                                colors = ButtonDefaults.buttonColors(containerColor = if (!isDemoAccount) BinanceYellow else Color.DarkGray),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                            ) {
+                                Text("حقيقي", color = if (!isDemoAccount) BinanceDark else Color.White, fontSize = 11.sp)
                             }
                         }
                     }
@@ -247,52 +244,57 @@ fun HomeScreen(viewModel: HomeViewModel) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text(text = "مرحباً بك في منصة التداول الفوري", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                 Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(text = "ربط حساب باينانس (API)", color = Color.White, fontWeight = FontWeight.Bold)
-                                        if (!isConnected) {
-                                            OutlinedTextField(value = apiKey, onValueChange = { apiKey = it }, label = { Text("API Key", color = Color.White) }, modifier = Modifier.fillMaxWidth())
-                                            OutlinedTextField(value = secretKey, onValueChange = { secretKey = it }, label = { Text("Secret Key", color = Color.White) }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-                                            Button(onClick = { if (apiKey.isNotBlank() && secretKey.isNotBlank()) { viewModel.fetchBinanceBalance(apiKey, secretKey); isConnected = true } }, colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow), modifier = Modifier.fillMaxWidth()) {
-                                                Text("ربط وجلب الرصيد", color = BinanceDark, fontWeight = FontWeight.Bold)
-                                            }
-                                        } else {
-                                            Text(text = walletBalance, color = ProfitGreen, fontWeight = FontWeight.Bold)
-                                        }
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(text = "حالة السوق والحساب متصل بنجاح 🟢", color = ProfitGreen, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(text = "الرصيد المتاح الحالي: ${if (isDemoAccount) String.format("%.2f", demoBalance) else String.format("%.2f", realBalance)} USDT", color = Color.White, fontSize = 14.sp)
                                     }
                                 }
                             }
                         }
                     }
                     "الأصول" -> {
+                        // الرصيد اللحظي مع إظهار العملات المستثمر بها
                         item {
+                            val activeInvestmentsTotal = executedTrades.sumOf { it.amount }
+                            val totalAssets = (if (isDemoAccount) demoBalance else realBalance) + activeInvestmentsTotal
+
                             Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(text = "إجمالي الأصول (Estimated Balance)", color = Color.Gray, fontSize = 13.sp)
-                                    Text(text = "2,850.40 USDT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text(text = "إجمالي الأصول اللحظي (Estimated Value)", color = Color.Gray, fontSize = 13.sp)
+                                    Text(text = "${String.format("%.2f", totalAssets)} USDT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                                     Divider(color = Color.DarkGray)
-                                    Text(text = "• محفظة السبوت: 1,850.20 USDT", color = Color.LightGray, fontSize = 13.sp)
-                                    Text(text = "• المحفظة الفورية (BTC): 0.012 BTC", color = Color.LightGray, fontSize = 13.sp)
+                                    Text(text = "• الكاش المتوافر (USDT): ${if (isDemoAccount) String.format("%.2f", demoBalance) else String.format("%.2f", realBalance)}", color = Color.LightGray, fontSize = 13.sp)
+                                    Text(text = "• الأموال المستثمرة بالصفقات: ${String.format("%.2f", activeInvestmentsTotal)} USDT", color = BinanceYellow, fontSize = 13.sp)
+                                    
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "العملات المستثمر بها حالياً:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    if (executedTrades.isEmpty()) {
+                                        Text(text = "لا توجد صفقات مفتوحة حالياً", color = Color.Gray, fontSize = 11.sp)
+                                    } else {
+                                        executedTrades.forEach { tr ->
+                                            Text(text = "• ${tr.symbol} (${tr.type}) بقيمة ${String.format("%.2f", tr.amount)} USDT", color = ProfitGreen, fontSize = 11.sp)
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                     "صفقاتي" -> {
-                        // خانة الصفقات المنفذة اللحظية والكميات وحساب الربح والخسارة
                         item {
-                            Text(text = "سجل الصفقات المنفذة والربح/الخسارة اللحظي", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = "إدارة الصفقات المفتوحة (إغلاق وتعديل لحظي)", color = BinanceYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                         if (executedTrades.isEmpty()) {
                             item {
                                 Card(colors = CardDefaults.cardColors(containerColor = BinanceDarkCard), modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                                         Text(text = "لا توجد صفقات منفذة حالياً", color = Color.Gray, fontSize = 14.sp)
-                                        Text(text = "قم بتنفيذ صفقات من تبويب 'تداول' لمتابعتها هنا", color = Color.LightGray, fontSize = 12.sp)
                                     }
                                 }
                             }
                         } else {
                             items(executedTrades) { trade ->
-                                val currentCoinObj = coins.find { it.symbol == trade.symbol }
+                                val currentCoinObj = coins.find { data -> data.symbol == trade.symbol }
                                 val currentPrice = currentCoinObj?.price ?: trade.entryPrice
                                 val priceDiff = if (trade.type == "BUY") currentPrice - trade.entryPrice else trade.entryPrice - currentPrice
                                 val pnlPercent = (priceDiff / trade.entryPrice) * 100
@@ -303,7 +305,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(text = "${trade.symbol} (${trade.type})", color = if (trade.type == "BUY") ProfitGreen else LossRed, fontWeight = FontWeight.Bold)
-                                            Text(text = "الوقت: ${trade.timestamp}", color = Color.Gray, fontSize = 11.sp)
+                                            // زر إغلاق الصفقة يدوياً
+                                            Button(
+                                                onClick = { viewModel.closeTrade(trade.id) },
+                                                colors = ButtonDefaults.buttonColors(containerColor = LossRed),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                                modifier = Modifier.height(28.dp)
+                                            ) {
+                                                Text("إغلاق يدوي", color = Color.White, fontSize = 10.sp)
+                                            }
                                         }
                                         Divider(color = Color.DarkGray, thickness = 0.5.dp)
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -313,10 +323,10 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(text = "الكمية: ${String.format("%.2f", trade.amount)} USDT", color = Color.LightGray, fontSize = 12.sp)
                                             Text(
-                                                text = "الربح/الخسارة: ${if (isProfit) "+" else ""}${String.format("%.2f", pnlAmount)} USDT (${String.format("%.2f", pnlPercent)}%)",
+                                                text = "الربح/الخسارة: ${if (isProfit) "+" else ""}${String.format("%.2f", pnlAmount)} (${String.format("%.2f", pnlPercent)}%)",
                                                 color = if (isProfit) ProfitGreen else LossRed,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp
+                                                fontSize = 12.sp
                                             )
                                         }
                                     }
@@ -331,7 +341,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         Text(text = "تنفيذ الصفقات الفورية (Spot Trading)", color = BinanceYellow, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text(text = "النسبة المستخدمة: ${tradePercentage.toInt()}%", color = Color.White)
+                                        Text(text = "النسبة من المحفظة: ${tradePercentage.toInt()}%", color = Color.White)
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             listOf(10.0, 25.0, 50.0, 100.0).forEach { pct ->
                                                 Button(onClick = { viewModel.setTradePercentage(pct) }, colors = ButtonDefaults.buttonColors(containerColor = if (tradePercentage == pct) BinanceYellow else Color.DarkGray), modifier = Modifier.weight(1f)) {
