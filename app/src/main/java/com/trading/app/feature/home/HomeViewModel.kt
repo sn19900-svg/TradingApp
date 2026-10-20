@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.trading.app.domain.model.Candle
 import com.trading.app.domain.model.Coin
 import com.trading.app.domain.model.IndicatorResult
-import com.trading.app.domain.model.TradingSignal
 import com.trading.app.domain.repository.TradingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -49,13 +48,12 @@ class HomeViewModel @Inject constructor(
     private val _demoBalance = MutableStateFlow(100.0)
     val demoBalance: StateFlow<Double> = _demoBalance.asStateFlow()
 
-    private val _realBalance = MutableStateFlow(2540.80) // تم ضبط الرصيد الحقيقي بدقة
+    private val _realBalance = MutableStateFlow(2540.80)
     val realBalance: StateFlow<Double> = _realBalance.asStateFlow()
 
     private val _tradePercentage = MutableStateFlow<Double>(10.0)
     val tradePercentage: StateFlow<Double> = _tradePercentage.asStateFlow()
 
-    // إعدادات الاستثمار التلقائي في الخلفية
     private val _isAutoInvestActive = MutableStateFlow(false)
     val isAutoInvestActive: StateFlow<Boolean> = _isAutoInvestActive.asStateFlow()
 
@@ -67,9 +65,6 @@ class HomeViewModel @Inject constructor(
 
     private val _executedTrades = MutableStateFlow<List<ExecutedTrade>>(emptyList())
     val executedTrades: StateFlow<List<ExecutedTrade>> = _executedTrades.asStateFlow()
-
-    private val _tradeResult = MutableStateFlow<String?>(null)
-    val tradeResult: StateFlow<String?> = _tradeResult.asStateFlow()
 
     init {
         loadCoins()
@@ -103,48 +98,9 @@ class HomeViewModel @Inject constructor(
                                 _selectedCoin.value = updated
                             }
                         }
-
-                        // محرك الاستثمار التلقائي في الخلفية (Auto-Invest Bot)
-                        if (_isAutoInvestActive.value && list.isNotEmpty()) {
-                            runAutoInvestBot(list)
-                        }
                     }
                 }
             }
-        }
-    }
-
-    private fun runAutoInvestBot(marketCoins: List<Coin>) {
-        val targetCoin = marketCoins.firstOrNull() ?: return
-        viewModelScope.launch {
-            repository.getCoinCandles(targetCoin.symbol, "1h").onSuccess { candleList ->
-                val ind = repository.calculateIndicators(candleList)
-                if (ind.signal == TradingSignal.BUY && _executedTrades.value.none { it.symbol == targetCoin.symbol }) {
-                    // تنفيذ شراء تلقائي في الخلفية مع تنبيه
-                    val budget = _autoInvestBudget.value
-                    val newTrade = ExecutedTrade(
-                        id = System.currentTimeMillis().toString().takeLast(5),
-                        symbol = targetCoin.symbol,
-                        type = "BUY (تلقائي)",
-                        entryPrice = targetCoin.price,
-                        amount = budget,
-                        percentage = 100.0,
-                        timestamp = android.text.format.DateFormat.format("HH:mm:ss", java.util.Date()).toString()
-                    )
-                    _executedTrades.value = listOf(newTrade) + _executedTrades.value
-                    _autoInvestLogs.value = listOf("🚨 تنبيه تلقائي: تم شراء ${targetCoin.symbol} بقيمة \$${budget} بناءً على إشارة RSI و EMA") + _autoInvestLogs.value
-                }
-            }
-        }
-    }
-
-    fun toggleAutoInvest(active: Boolean, budget: Double) {
-        _isAutoInvestActive.value = active
-        _autoInvestBudget.value = budget
-        if (active) {
-            _autoInvestLogs.value = listOf("🟢 تم تفعيل البوت وعمليات الاستثمار التلقائي في الخلفية بنجاح.") + _autoInvestLogs.value
-        } else {
-            _autoInvestLogs.value = listOf("🔴 تم إيقاف بوت الاستثمار التلقائي.") + _autoInvestLogs.value
         }
     }
 
@@ -205,7 +161,8 @@ class HomeViewModel @Inject constructor(
         _executedTrades.value = _executedTrades.value.filter { it.id != tradeId }
     }
 
-    fun clearTradeResult() {
-        _tradeResult.value = null
+    fun toggleAutoInvest(active: Boolean, budget: Double) {
+        _isAutoInvestActive.value = active
+        _autoInvestBudget.value = budget
     }
 }
