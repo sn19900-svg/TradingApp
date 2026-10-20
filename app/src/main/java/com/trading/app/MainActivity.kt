@@ -3,11 +3,14 @@ package com.trading.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.trading.app.core.theme.TradingAppTheme
 import com.trading.app.feature.home.HomeScreen
-import com.trading.app.feature.home.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -15,8 +18,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TradingAppTheme {
-                val viewModel: HomeViewModel = hiltViewModel()
-                HomeScreen(viewModel = viewModel)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color(0xFF0B0E11)
+                ) {
+                    HomeScreen(viewModel = hiltViewModel())
+                }
             }
         }
     }
